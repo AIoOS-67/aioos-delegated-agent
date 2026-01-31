@@ -1,0 +1,128 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply text-gray-900 antialiased bg-white;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply px-6 py-3 bg-black hover:bg-gray-800 text-white font-medium rounded-lg transition-all duration-200;
+  }
+
+  .btn-secondary {
+    @apply px-6 py-3 bg-white hover:bg-gray-50 text-black font-medium rounded-lg transition-all duration-200 border border-black;
+  }
+
+  .btn-danger {
+    @apply px-4 py-2 bg-black hover:bg-gray-800 text-white font-medium rounded-lg transition-all duration-200;
+  }
+
+  .card {
+    @apply bg-white border border-gray-300 rounded-xl p-6 shadow-sm;
+  }
+
+  .input {
+    @apply w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent;
+  }
+
+  .label {
+    @apply block text-sm font-medium text-gray-800 mb-2;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #999;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #666;
+}
+
+/* Dark theme scrollbar */
+.bg-gray-900 ::-webkit-scrollbar-track,
+.bg-gray-800 ::-webkit-scrollbar-track {
+  background: #1f2937;
+}
+
+.bg-gray-900 ::-webkit-scrollbar-thumb,
+.bg-gray-800 ::-webkit-scrollbar-thumb {
+  background: #4b5563;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 5px rgba(139, 92, 246, 0.5); }
+  50% { box-shadow: 0 0 20px rgba(139, 92, 246, 0.8); }
+}
+
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+.animate-slideIn {
+  animation: slideIn 0.3s ease-out forwards;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient-shift 3s ease infinite;
+}
+
+/* State colors for PTAS lifecycle */
+.state-dormant { @apply bg-gray-600 text-gray-100; }
+.state-activating { @apply bg-yellow-500 text-yellow-100; }
+.state-active { @apply bg-green-500 text-green-100; }
+.state-executing { @apply bg-blue-500 text-blue-100; }
+.state-hibernating { @apply bg-purple-500 text-purple-100; }
+
+/* Trust tier badges */
+.tier-unverified { @apply bg-gray-500; }
+.tier-basic { @apply bg-blue-500; }
+.tier-verified { @apply bg-green-500; }
+.tier-premium { @apply bg-purple-500; }
+.tier-elite { @apply bg-yellow-500; }
+
+/* Smooth transitions for all interactive elements */
+button, a, input, select {
+  @apply transition-all duration-200;
+}
+
+/* Better focus states */
+button:focus-visible, a:focus-visible, input:focus-visible {
+  @apply outline-none ring-2 ring-purple-500 ring-offset-2 ring-offset-gray-900;
+}
