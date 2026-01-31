@@ -22,7 +22,7 @@ RUN npm run build
 FROM node:20-alpine AS runner
 
 # Install runtime dependencies for better-sqlite3
-RUN apk add --no-cache sqlite
+RUN apk add --no-cache sqlite libstdc++
 
 WORKDIR /app
 

@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI, FunctionDeclarationSchemaType } from '@google/generative-ai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { AVAILABLE_TOOLS, executeToolCall, getToolsForPermissions, isToolCallAllowed, ToolCall } from './tools';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
@@ -77,11 +77,11 @@ function getGeminiFunctionDeclarations(permissions: string[]) {
     name: tool.name,
     description: tool.description,
     parameters: {
-      type: FunctionDeclarationSchemaType.OBJECT,
+      type: 'OBJECT' as const,
       properties: Object.fromEntries(
         Object.entries(tool.parameters.properties).map(([key, value]: [string, any]) => [
           key,
-          { type: FunctionDeclarationSchemaType.STRING, description: value.description }
+          { type: 'STRING' as const, description: value.description }
         ])
       ),
       required: tool.parameters.required

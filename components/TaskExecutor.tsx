@@ -18,6 +18,7 @@ interface Agent {
   constraints?: string;
   status: 'active' | 'revoked' | 'expired';
   license?: AgentLicense;
+  created_at?: string;
 }
 
 interface ToolCall {
