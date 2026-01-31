@@ -25,6 +25,8 @@ prn
 PRN
 aux
 AUX
+com1
+COM1
 
 # Local Claude settings
 .claude/
@@ -34,10 +36,13 @@ Thumbs.db
 Desktop.ini
 .DS_Store
 
-# Cloud build files
-cloudbuild.yaml
-.gcloudignore
+# Test files
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+__tests__/
 
-# Docker files
-Dockerfile
-.dockerignore
+# Documentation
+*.md
+!README.md
