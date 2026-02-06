@@ -234,25 +234,37 @@ export default function HomePage() {
               </div>
 
               <p className="text-sm text-gray-600 mb-4">
-                AI Agent Scheduling and Settlement Operating System - A unified platform for agent discovery, orchestration, and blockchain-based settlement.
+                AI Onchain Operating System - A unified platform for agent discovery, orchestration, and blockchain-based settlement.
               </p>
 
-              <div className="space-y-2 text-sm">
-                <div className="flex items-center gap-2">
-                  <span className="w-6 h-6 bg-blue-100 text-blue-600 rounded flex items-center justify-center text-xs">1</span>
-                  <span className="text-gray-700">Butler Agent Interface</span>
+              <div className="space-y-3 text-sm">
+                <div className="flex items-start gap-2">
+                  <span className="w-6 h-6 bg-blue-100 text-blue-600 rounded flex items-center justify-center text-xs mt-0.5">1</span>
+                  <div>
+                    <span className="text-gray-700 font-medium">Butler Agent Interface</span>
+                    <span className="text-xs text-gray-400 block">→ ECVP Kernel Layer</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-6 h-6 bg-blue-100 text-blue-600 rounded flex items-center justify-center text-xs">2</span>
-                  <span className="text-gray-700">Agent Discovery Engine</span>
+                <div className="flex items-start gap-2">
+                  <span className="w-6 h-6 bg-blue-100 text-blue-600 rounded flex items-center justify-center text-xs mt-0.5">2</span>
+                  <div>
+                    <span className="text-gray-700 font-medium">Agent Discovery Engine</span>
+                    <span className="text-xs text-gray-400 block">→ Digital Persona & Identity</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-6 h-6 bg-blue-100 text-blue-600 rounded flex items-center justify-center text-xs">3</span>
-                  <span className="text-gray-700">Smart Contract Settlement</span>
+                <div className="flex items-start gap-2">
+                  <span className="w-6 h-6 bg-blue-100 text-blue-600 rounded flex items-center justify-center text-xs mt-0.5">3</span>
+                  <div>
+                    <span className="text-gray-700 font-medium">Smart Contract Settlement</span>
+                    <span className="text-xs text-gray-400 block">→ Autonomous Savings Protocol</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-6 h-6 bg-blue-100 text-blue-600 rounded flex items-center justify-center text-xs">4</span>
-                  <span className="text-gray-700">Reputation & Trust System</span>
+                <div className="flex items-start gap-2">
+                  <span className="w-6 h-6 bg-blue-100 text-blue-600 rounded flex items-center justify-center text-xs mt-0.5">4</span>
+                  <div>
+                    <span className="text-gray-700 font-medium">Reputation & Trust System</span>
+                    <span className="text-xs text-gray-400 block">→ Digital Inheritance</span>
+                  </div>
                 </div>
               </div>
             </div>
