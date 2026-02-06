@@ -27,44 +27,29 @@ export default function HomePage() {
       {/* Header */}
       <header className="border-b border-gray-200">
         <div className="max-w-6xl mx-auto px-8 py-4">
-          <div className="flex items-center justify-between">
+          <div className="relative flex items-center justify-between">
+            {/* Left - Logo */}
             <div className="flex items-center gap-3">
               <Image src="/logo.png" alt="AIoOS Logo" width={40} height={40} />
               <span className="text-xl font-bold text-black">AIoOS</span>
             </div>
-            <nav className="flex items-center gap-3">
-              <Link href="/pitch" className="px-3 py-1 bg-yellow-500 hover:bg-yellow-600 text-black rounded-full text-sm font-medium transition-colors">
-                Pitch Deck
-              </Link>
-              <Link href="/demo" className="px-3 py-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-full text-sm font-medium transition-colors">
-                Demo Tour
-              </Link>
-              <Link href="/butler" className="text-purple-600 hover:text-purple-700 font-medium transition-colors text-sm">
-                Butler
-              </Link>
-              <Link href="/licensing" className="text-blue-600 hover:text-blue-700 font-medium transition-colors text-sm">
-                Licensing
-              </Link>
-              <Link href="/lifecycle" className="text-green-600 hover:text-green-700 font-medium transition-colors text-sm">
-                PTAS
-              </Link>
 
-              {/* Hackathon Mode Selector */}
-              <div className="flex items-center gap-1 ml-2 border-l border-gray-300 pl-3">
-                <Link href="/gemini" className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium flex items-center gap-1 border border-blue-500 hover:bg-blue-200 transition-colors">
-                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  Gemini
-                </Link>
-                <Link href="/solana" className="px-2 py-1 bg-gray-100 hover:bg-purple-100 text-gray-500 hover:text-purple-700 rounded text-xs font-medium transition-colors">
-                  Solana
-                </Link>
-                <Link href="/uniswap" className="px-2 py-1 bg-gray-100 hover:bg-pink-100 text-gray-500 hover:text-pink-700 rounded text-xs font-medium transition-colors">
-                  Uniswap
-                </Link>
-              </div>
-            </nav>
+            {/* Center - Hackathon Mode Selector */}
+            <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-2">
+              <Link href="/gemini" className="px-3 py-1.5 border border-green-500 text-green-600 rounded-full text-sm font-medium flex items-center gap-1.5 hover:bg-green-50 transition-colors">
+                <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                Gemini
+              </Link>
+              <Link href="/solana" className="px-3 py-1.5 border border-gray-300 text-gray-500 rounded-full text-sm font-medium hover:border-purple-400 hover:text-purple-600 transition-colors">
+                Solana
+              </Link>
+              <Link href="/uniswap" className="px-3 py-1.5 border border-gray-300 text-gray-500 rounded-full text-sm font-medium hover:border-pink-400 hover:text-pink-600 transition-colors">
+                Uniswap
+              </Link>
+            </div>
+
+            {/* Right - Spacer for balance */}
+            <div className="w-24"></div>
           </div>
         </div>
       </header>
