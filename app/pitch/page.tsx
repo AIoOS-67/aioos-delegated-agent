@@ -9,7 +9,7 @@ const slides = [
     id: 1,
     type: 'title',
     title: 'AIoOS',
-    subtitle: 'AI Agent Scheduling & Settlement Operating System',
+    subtitle: 'AI Onchain Operating System',
     tagline: 'The First Shared Economy Platform for AI Agents',
     badges: ['3 USPTO Patent Applications Filed', '2026-01-30'],
     patentNotice: 'Patent-Pending Technologies: USPTO 63/971,567 • 63/971,570 • 63/971,575',
@@ -73,7 +73,7 @@ const slides = [
       {
         num: 2,
         name: 'AIoOS Platform',
-        fullName: 'AI Agent Scheduling & Settlement OS',
+        fullName: 'AI Onchain Operating System',
         icon: '🌐',
         color: 'purple',
         usptoNum: '63/971,570',

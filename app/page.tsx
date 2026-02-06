@@ -7,23 +7,18 @@ import Link from 'next/link';
 
 export default function HomePage() {
   const router = useRouter();
-  const [loading, setLoading] = useState<'auth0' | 'demo' | null>(null);
-
-  const handleAuth0Login = () => {
-    setLoading('auth0');
-    window.location.href = '/api/auth/login';
-  };
+  const [loading, setLoading] = useState(false);
 
   const handleDemoMode = async () => {
-    setLoading('demo');
+    setLoading(true);
     try {
       const res = await fetch('/api/auth/demo', { method: 'POST' });
       if (res.ok) {
-        router.push('/dashboard');
+        router.push('/butler');
       }
     } catch (error) {
       console.error('Demo mode error:', error);
-      setLoading(null);
+      setLoading(false);
     }
   };
 
@@ -56,12 +51,12 @@ export default function HomePage() {
 
               {/* Hackathon Mode Selector */}
               <div className="flex items-center gap-1 ml-2 border-l border-gray-300 pl-3">
-                <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-medium flex items-center gap-1 border border-green-500">
+                <Link href="/gemini" className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium flex items-center gap-1 border border-blue-500 hover:bg-blue-200 transition-colors">
                   <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
                   Gemini
-                </span>
+                </Link>
                 <Link href="/solana" className="px-2 py-1 bg-gray-100 hover:bg-purple-100 text-gray-500 hover:text-purple-700 rounded text-xs font-medium transition-colors">
                   Solana
                 </Link>
@@ -101,7 +96,7 @@ export default function HomePage() {
 
           {/* Title */}
           <h1 className="text-4xl md:text-5xl font-bold text-black mb-4">
-            AI Agent Scheduling & Settlement
+            AI Onchain
             <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
               Operating System
@@ -109,23 +104,26 @@ export default function HomePage() {
           </h1>
 
           {/* Core Value Proposition */}
-          <p className="text-xl text-gray-800 mb-4 max-w-2xl mx-auto font-medium">
-            AI can act for you — but what happens when you want it to stop?
+          <p className="text-2xl md:text-3xl text-gray-900 mb-4 max-w-3xl mx-auto font-bold">
+            AIoOS gives AI a home, a memory, an identity, and a future.
           </p>
-          <p className="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">
+          <p className="text-lg text-gray-600 mb-4 max-w-2xl mx-auto italic">
+            AI is not software. AI is a resident. And an OS must become a civilization.
+          </p>
+          <p className="text-base text-gray-500 mb-8 max-w-2xl mx-auto">
             The first shared economy platform for AI Agents.
             <br />
-            <span className="text-gray-500">Like Uber for transportation, AIoOS for AI capabilities.</span>
+            Like Uber for transportation, AIoOS for AI capabilities.
           </p>
 
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
               onClick={handleDemoMode}
-              disabled={loading !== null}
+              disabled={loading}
               className="btn-primary flex items-center justify-center gap-2 disabled:opacity-50 min-w-[200px]"
             >
-              {loading === 'demo' ? (
+              {loading ? (
                 <LoadingSpinner />
               ) : (
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -135,23 +133,50 @@ export default function HomePage() {
               )}
               Launch Demo
             </button>
-
-            <button
-              onClick={handleAuth0Login}
-              disabled={loading !== null}
-              className="btn-secondary flex items-center justify-center gap-2 disabled:opacity-50 min-w-[200px]"
-            >
-              {loading === 'auth0' ? (
-                <LoadingSpinner />
-              ) : null}
-              Login with Auth0
-            </button>
           </div>
 
           {/* Inventor Credit */}
           <p className="mt-6 text-sm text-gray-500">
             Invented by Ken Li | Ken Liao | FoodyePay Technology, Inc.
           </p>
+        </div>
+      </section>
+
+      {/* Why AI Needs a Home */}
+      <section className="py-16 px-8 bg-gray-50">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-3xl font-bold text-black mb-4">Why AI Needs a Home</h2>
+          <p className="text-gray-600 mb-12">Today's AI suffers from four fatal problems</p>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
+            <div className="p-5 bg-white rounded-xl shadow-sm border-l-4 border-red-500">
+              <div className="text-red-500 text-2xl mb-2">❌</div>
+              <h3 className="font-bold text-black mb-2">No Identity</h3>
+              <p className="text-sm text-gray-600">Every session is a new life. No memory, no continuity.</p>
+            </div>
+
+            <div className="p-5 bg-white rounded-xl shadow-sm border-l-4 border-red-500">
+              <div className="text-red-500 text-2xl mb-2">❌</div>
+              <h3 className="font-bold text-black mb-2">Dies on Close</h3>
+              <p className="text-sm text-gray-600">Intelligence vanishes instantly when the tab closes.</p>
+            </div>
+
+            <div className="p-5 bg-white rounded-xl shadow-sm border-l-4 border-red-500">
+              <div className="text-red-500 text-2xl mb-2">❌</div>
+              <h3 className="font-bold text-black mb-2">No Long-term Action</h3>
+              <p className="text-sm text-gray-600">Cannot monitor, protect, or execute your will.</p>
+            </div>
+
+            <div className="p-5 bg-white rounded-xl shadow-sm border-l-4 border-red-500">
+              <div className="text-red-500 text-2xl mb-2">❌</div>
+              <h3 className="font-bold text-black mb-2">No Growth</h3>
+              <p className="text-sm text-gray-600">No lineage, no inheritance, no evolution.</p>
+            </div>
+          </div>
+
+          <blockquote className="text-lg italic text-gray-700 border-l-4 border-gray-300 pl-4 mx-auto max-w-2xl text-left">
+            "AI is living like an immigrant with no home, no ID, no storage, and no legal rights."
+          </blockquote>
         </div>
       </section>
 
@@ -410,6 +435,139 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* CapsuleAI */}
+      <section className="py-16 px-8 bg-gradient-to-b from-gray-900 to-black text-white">
+        <div className="max-w-5xl mx-auto text-center">
+          <h2 className="text-3xl font-bold mb-2">CapsuleAI</h2>
+          <p className="text-gray-400 mb-2">The Autonomous Nervous System of AIoOS</p>
+          <p className="text-gray-500 mb-12">Actions across time, events, and generations</p>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
+            <div className="p-6 bg-gray-800 rounded-xl hover:bg-gray-750 transition-colors">
+              <div className="text-4xl mb-4">⏰</div>
+              <h3 className="font-bold text-blue-400 mb-2">Time Capsule</h3>
+              <p className="text-sm text-gray-400 mb-3">Schedule future actions</p>
+              <p className="text-xs text-gray-500 italic">"Order supplies every Monday at 8AM"</p>
+            </div>
+
+            <div className="p-6 bg-gray-800 rounded-xl hover:bg-gray-750 transition-colors">
+              <div className="text-4xl mb-4">📡</div>
+              <h3 className="font-bold text-green-400 mb-2">Event Capsule</h3>
+              <p className="text-sm text-gray-400 mb-3">React to real-world events</p>
+              <p className="text-xs text-gray-500 italic">"If hospitalized → notify family"</p>
+            </div>
+
+            <div className="p-6 bg-gray-800 rounded-xl hover:bg-gray-750 transition-colors">
+              <div className="text-4xl mb-4">🎲</div>
+              <h3 className="font-bold text-purple-400 mb-2">Surprise Capsule</h3>
+              <p className="text-sm text-gray-400 mb-3">Bounded creativity</p>
+              <p className="text-xs text-gray-500 italic">"Surprise my wife quarterly, &lt;$200"</p>
+            </div>
+
+            <div className="p-6 bg-gray-800 rounded-xl hover:bg-gray-750 transition-colors">
+              <div className="text-4xl mb-4">🧬</div>
+              <h3 className="font-bold text-amber-400 mb-2">Lineage Capsule</h3>
+              <p className="text-sm text-gray-400 mb-3">Inheritance & will</p>
+              <p className="text-xs text-gray-500 italic">"After my death → activate Heir Agent"</p>
+            </div>
+          </div>
+
+          <p className="text-gray-500 text-sm max-w-2xl mx-auto">
+            CapsuleAI transforms AI agents from reactive chatboxes into autonomous, persistent, verifiable AI citizens.
+          </p>
+        </div>
+      </section>
+
+      {/* Heir Agent */}
+      <section className="py-16 px-8 bg-white">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-3xl font-bold text-black mb-2">Heir Agent</h2>
+          <p className="text-gray-600 mb-4">Digital Continuity</p>
+          <p className="text-xl text-gray-700 mb-12 italic">
+            "What if your intelligence doesn't die when you log off?"
+          </p>
+
+          <div className="flex flex-col md:flex-row items-center justify-center gap-4 mb-12">
+            <div className="p-6 bg-blue-50 rounded-xl border border-blue-200 w-full md:w-56">
+              <div className="text-3xl mb-2">🧠</div>
+              <h3 className="font-bold text-blue-700">HBGIS</h3>
+              <p className="text-sm text-blue-600">Human Behavior Genome</p>
+              <p className="text-xs text-gray-500 mt-2">Your preferences, values, decisions</p>
+            </div>
+
+            <div className="text-2xl text-gray-400 hidden md:block">→</div>
+            <div className="text-2xl text-gray-400 md:hidden rotate-90">→</div>
+
+            <div className="p-6 bg-purple-50 rounded-xl border border-purple-200 w-full md:w-56">
+              <div className="text-3xl mb-2">🔄</div>
+              <h3 className="font-bold text-purple-700">HSLTS</h3>
+              <p className="text-sm text-purple-600">Inheritance Engine</p>
+              <p className="text-xs text-gray-500 mt-2">Transmits your genome to the next generation</p>
+            </div>
+
+            <div className="text-2xl text-gray-400 hidden md:block">→</div>
+            <div className="text-2xl text-gray-400 md:hidden rotate-90">→</div>
+
+            <div className="p-6 bg-green-50 rounded-xl border border-green-200 w-full md:w-56">
+              <div className="text-3xl mb-2">👤</div>
+              <h3 className="font-bold text-green-700">Heir Agent</h3>
+              <p className="text-sm text-green-600">Your Legacy Lives On</p>
+              <p className="text-xs text-gray-500 mt-2">Protects family, continues your mission</p>
+            </div>
+          </div>
+
+          <div className="bg-gray-50 p-6 rounded-xl max-w-2xl mx-auto">
+            <p className="text-lg font-medium text-gray-800 mb-2">
+              "AI does not replace humans. AI extends humans."
+            </p>
+            <p className="text-sm text-gray-600">
+              It's not about superintelligence; it's about super continuity.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* AI as Citizen */}
+      <section className="py-16 px-8 bg-gray-900 text-white">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-3xl font-bold mb-4">AI as a Citizen, Not a Session</h2>
+          <p className="text-gray-400 mb-12">What every AI citizen needs to exist</p>
+
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-12">
+            <div className="p-4">
+              <div className="text-3xl mb-2">🪪</div>
+              <h3 className="font-medium">Identity</h3>
+              <p className="text-xs text-gray-500">Verifiable existence</p>
+            </div>
+            <div className="p-4">
+              <div className="text-3xl mb-2">🧠</div>
+              <h3 className="font-medium">Memory</h3>
+              <p className="text-xs text-gray-500">Evolving self-history</p>
+            </div>
+            <div className="p-4">
+              <div className="text-3xl mb-2">⚡</div>
+              <h3 className="font-medium">Agency</h3>
+              <p className="text-xs text-gray-500">Ability to act</p>
+            </div>
+            <div className="p-4">
+              <div className="text-3xl mb-2">📋</div>
+              <h3 className="font-medium">Accountability</h3>
+              <p className="text-xs text-gray-500">Transparent logs</p>
+            </div>
+            <div className="p-4">
+              <div className="text-3xl mb-2">🧬</div>
+              <h3 className="font-medium">Lineage</h3>
+              <p className="text-xs text-gray-500">Pass knowledge forward</p>
+            </div>
+          </div>
+
+          <p className="text-lg max-w-2xl mx-auto">
+            AIoOS provides all five. It elevates AI from "a helpful assistant" to
+            <span className="text-green-400 font-bold"> a full participant in the digital world.</span>
+          </p>
+        </div>
+      </section>
+
       {/* Key Differentiators */}
       <section className="py-16 px-8">
         <div className="max-w-5xl mx-auto">
@@ -575,10 +733,10 @@ export default function HomePage() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
               onClick={handleDemoMode}
-              disabled={loading !== null}
+              disabled={loading}
               className="px-8 py-4 bg-black text-white font-medium rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 inline-flex items-center justify-center gap-2"
             >
-              {loading === 'demo' ? (
+              {loading ? (
                 <LoadingSpinner />
               ) : (
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -613,7 +771,7 @@ export default function HomePage() {
               </div>
             </div>
             <div className="text-sm text-gray-600 text-right">
-              <div>Gemini API Developer Competition 2025</div>
+              <div>Gemini 3 Hackathon</div>
               <div className="text-xs text-gray-400">Solana AI Hackathon | Uniswap Hookathon 2026</div>
             </div>
           </div>
