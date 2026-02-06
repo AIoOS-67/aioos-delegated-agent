@@ -334,4 +334,18 @@ export function getAuditLogs(agentId?: string, limit = 50): AuditLog[] {
   }
 }
 
+// Reset all data for a user
+export function resetUserData(userId: string): void {
+  const agents = getAgentsByUserId(userId);
+  const agentIds = agents.map(a => a.id);
+
+  if (agentIds.length > 0) {
+    const placeholders = agentIds.map(() => '?').join(',');
+    db.prepare(`DELETE FROM tasks WHERE agent_id IN (${placeholders})`).run(...agentIds);
+    db.prepare(`DELETE FROM audit_logs WHERE agent_id IN (${placeholders})`).run(...agentIds);
+  }
+  db.prepare('DELETE FROM audit_logs WHERE user_id = ?').run(userId);
+  db.prepare('DELETE FROM agents WHERE user_id = ?').run(userId);
+}
+
 export default db;
