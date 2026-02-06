@@ -38,13 +38,13 @@ export default function HomePage() {
             <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-2">
               <Link href="/gemini" className="px-3 py-1.5 border border-green-500 text-green-600 rounded-full text-sm font-medium flex items-center gap-1.5 hover:bg-green-50 transition-colors">
                 <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                Gemini
+                Gemini 3 Hackathon
               </Link>
               <Link href="/solana" className="px-3 py-1.5 border border-gray-300 text-gray-500 rounded-full text-sm font-medium hover:border-purple-400 hover:text-purple-600 transition-colors">
-                Solana
+                Solana AI Hackathon
               </Link>
               <Link href="/uniswap" className="px-3 py-1.5 border border-gray-300 text-gray-500 rounded-full text-sm font-medium hover:border-pink-400 hover:text-pink-600 transition-colors">
-                Uniswap
+                Uniswap Hookathon V4
               </Link>
             </div>
 

@@ -21,17 +21,17 @@ export default function SolanaModePage() {
 
               {/* Mode Selector */}
               <div className="flex items-center gap-1 ml-2 border-l border-gray-300 pl-3">
-                <Link href="/" className="px-2 py-1 bg-gray-100 hover:bg-green-100 text-gray-500 hover:text-green-700 rounded text-xs font-medium transition-colors">
-                  Gemini
+                <Link href="/gemini" className="px-2 py-1 bg-gray-100 hover:bg-green-100 text-gray-500 hover:text-green-700 rounded text-xs font-medium transition-colors">
+                  Gemini 3 Hackathon
                 </Link>
                 <span className="px-2 py-1 bg-gradient-to-r from-[#9945FF]/10 to-[#14F195]/10 text-[#9945FF] rounded text-xs font-medium flex items-center gap-1 border border-[#9945FF]">
                   <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
-                  Solana
+                  Solana AI Hackathon
                 </span>
                 <Link href="/uniswap" className="px-2 py-1 bg-gray-100 hover:bg-pink-100 text-gray-500 hover:text-pink-600 rounded text-xs font-medium transition-colors">
-                  Uniswap
+                  Uniswap Hookathon V4
                 </Link>
               </div>
             </nav>

@@ -60,13 +60,13 @@ export default function GeminiModePage() {
             <div className="flex items-center gap-2">
               <span className="px-3 py-1.5 border border-green-500 text-green-600 rounded-full text-sm font-medium flex items-center gap-1.5">
                 <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                Gemini
+                Gemini 3 Hackathon
               </span>
               <Link href="/solana" className="px-3 py-1.5 text-gray-500 hover:text-purple-600 text-sm font-medium transition-colors">
-                Solana
+                Solana AI Hackathon
               </Link>
               <Link href="/uniswap" className="px-3 py-1.5 text-gray-500 hover:text-pink-600 text-sm font-medium transition-colors">
-                Uniswap
+                Uniswap Hookathon V4
               </Link>
             </div>
           </div>
