@@ -49,9 +49,6 @@ export default function GeminiModePage() {
 
             {/* Right - Key Actions */}
             <div className="flex items-center gap-3">
-              <Link href="/pitch" className="px-3 py-1.5 bg-purple-500 hover:bg-purple-600 text-white rounded-full text-sm font-medium transition-colors">
-                Pitch Deck
-              </Link>
               <Link href="/demo" className="px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded-full text-sm font-medium transition-colors">
                 Demo Tour
               </Link>
