@@ -27,46 +27,33 @@ export default function GeminiModePage() {
       {/* Header */}
       <header className="border-b border-gray-200">
         <div className="max-w-6xl mx-auto px-8 py-4">
-          <div className="flex items-center justify-between">
-            {/* Left - Logo */}
-            <Link href="/" className="flex items-center gap-3">
-              <Image src="/logo.png" alt="AIoOS Logo" width={40} height={40} />
-              <span className="text-xl font-bold text-black">AIoOS</span>
-            </Link>
-
-            {/* Center - Navigation */}
-            <nav className="flex items-center gap-3">
+          <div className="relative flex items-center justify-between">
+            {/* Left - Logo + Back */}
+            <div className="flex items-center gap-4">
+              <Link href="/" className="flex items-center gap-3">
+                <Image src="/logo.png" alt="AIoOS Logo" width={40} height={40} />
+                <span className="text-xl font-bold text-black">AIoOS</span>
+              </Link>
               <Link href="/" className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full text-sm font-medium transition-colors">
                 Back to Home
               </Link>
+            </div>
+
+            {/* Center - Current Hackathon */}
+            <div className="absolute left-1/2 transform -translate-x-1/2">
+              <span className="px-4 py-2 border-2 border-green-500 text-green-600 rounded-full text-sm font-medium flex items-center gap-2">
+                <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                Gemini 3 Hackathon
+              </span>
+            </div>
+
+            {/* Right - Key Actions */}
+            <div className="flex items-center gap-3">
               <Link href="/pitch" className="px-3 py-1.5 bg-purple-500 hover:bg-purple-600 text-white rounded-full text-sm font-medium transition-colors">
                 Pitch Deck
               </Link>
               <Link href="/demo" className="px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded-full text-sm font-medium transition-colors">
                 Demo Tour
-              </Link>
-              <Link href="/butler" className="text-gray-600 hover:text-gray-900 font-medium transition-colors text-sm">
-                Butler
-              </Link>
-              <Link href="/licensing" className="text-gray-600 hover:text-gray-900 font-medium transition-colors text-sm">
-                Licensing
-              </Link>
-              <Link href="/lifecycle" className="text-gray-600 hover:text-gray-900 font-medium transition-colors text-sm">
-                PTAS
-              </Link>
-            </nav>
-
-            {/* Right - Hackathon Mode Selector */}
-            <div className="flex items-center gap-2">
-              <span className="px-3 py-1.5 border border-green-500 text-green-600 rounded-full text-sm font-medium flex items-center gap-1.5">
-                <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                Gemini 3 Hackathon
-              </span>
-              <Link href="/solana" className="px-3 py-1.5 text-gray-500 hover:text-purple-600 text-sm font-medium transition-colors">
-                Solana AI Hackathon
-              </Link>
-              <Link href="/uniswap" className="px-3 py-1.5 text-gray-500 hover:text-pink-600 text-sm font-medium transition-colors">
-                Uniswap Hookathon V4
               </Link>
             </div>
           </div>
@@ -300,33 +287,6 @@ export default function GeminiModePage() {
               Launch Interactive Demo
             </button>
           </div>
-        </div>
-      </section>
-
-      {/* Timeline */}
-      <section className="py-16 px-8 bg-gray-50">
-        <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-3xl font-bold mb-8 text-black">Hackathon Timeline</h2>
-
-          <div className="flex items-center justify-center gap-4 md:gap-8">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-gray-100 border-2 border-gray-300 rounded-full flex items-center justify-center mb-2 mx-auto">
-                <span className="text-xl font-bold text-gray-700">2/6</span>
-              </div>
-              <div className="text-sm text-gray-500">Today</div>
-            </div>
-            <div className="flex-1 h-0.5 bg-gradient-to-r from-gray-300 to-[#4285F4] max-w-48"></div>
-            <div className="text-center">
-              <div className="w-16 h-16 bg-[#4285F4] rounded-full flex items-center justify-center mb-2 mx-auto">
-                <span className="text-xl font-bold text-white">2/9</span>
-              </div>
-              <div className="text-sm text-[#4285F4] font-medium">Deadline</div>
-            </div>
-          </div>
-
-          <p className="mt-8 text-gray-600">
-            <span className="text-[#4285F4] font-medium">Gemini</span> API Developer Competition deadline: February 9, 2026
-          </p>
         </div>
       </section>
 
