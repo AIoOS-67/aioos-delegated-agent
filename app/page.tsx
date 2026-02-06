@@ -37,28 +37,38 @@ export default function HomePage() {
               <Image src="/logo.png" alt="AIoOS Logo" width={40} height={40} />
               <span className="text-xl font-bold text-black">AIoOS</span>
             </div>
-            <nav className="flex items-center gap-6">
+            <nav className="flex items-center gap-3">
               <Link href="/pitch" className="px-3 py-1 bg-yellow-500 hover:bg-yellow-600 text-black rounded-full text-sm font-medium transition-colors">
                 Pitch Deck
               </Link>
               <Link href="/demo" className="px-3 py-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-full text-sm font-medium transition-colors">
                 Demo Tour
               </Link>
-              <Link href="/butler" className="text-purple-600 hover:text-purple-700 font-medium transition-colors">
+              <Link href="/butler" className="text-purple-600 hover:text-purple-700 font-medium transition-colors text-sm">
                 Butler
               </Link>
-              <Link href="/licensing" className="text-blue-600 hover:text-blue-700 font-medium transition-colors">
+              <Link href="/licensing" className="text-blue-600 hover:text-blue-700 font-medium transition-colors text-sm">
                 Licensing
               </Link>
-              <Link href="/lifecycle" className="text-green-600 hover:text-green-700 font-medium transition-colors">
+              <Link href="/lifecycle" className="text-green-600 hover:text-green-700 font-medium transition-colors text-sm">
                 PTAS
               </Link>
-              <Link href="/use-cases" className="text-gray-700 hover:text-black transition-colors">
-                Use Cases
-              </Link>
-              <Link href="/architecture" className="text-gray-700 hover:text-black transition-colors">
-                Architecture
-              </Link>
+
+              {/* Hackathon Mode Selector */}
+              <div className="flex items-center gap-1 ml-2 border-l border-gray-300 pl-3">
+                <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-medium flex items-center gap-1 border border-green-500">
+                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  Gemini
+                </span>
+                <Link href="/solana" className="px-2 py-1 bg-gray-100 hover:bg-purple-100 text-gray-500 hover:text-purple-700 rounded text-xs font-medium transition-colors">
+                  Solana
+                </Link>
+                <Link href="/uniswap" className="px-2 py-1 bg-gray-100 hover:bg-pink-100 text-gray-500 hover:text-pink-700 rounded text-xs font-medium transition-colors">
+                  Uniswap
+                </Link>
+              </div>
             </nav>
           </div>
         </div>
@@ -82,7 +92,7 @@ export default function HomePage() {
           {/* Badge */}
           <div className="flex justify-center gap-2 mb-4">
             <span className="px-3 py-1 bg-blue-100 text-blue-700 text-sm font-medium rounded-full">
-              3 USPTO Patent Applications
+              24 USPTO Patent Applications
             </span>
             <span className="px-3 py-1 bg-green-100 text-green-700 text-sm font-medium rounded-full">
               USPTO Filed 2026-01-30
@@ -98,11 +108,14 @@ export default function HomePage() {
             </span>
           </h1>
 
-          {/* Subtitle */}
-          <p className="text-xl text-gray-700 mb-8 max-w-2xl mx-auto">
+          {/* Core Value Proposition */}
+          <p className="text-xl text-gray-800 mb-4 max-w-2xl mx-auto font-medium">
+            AI can act for you — but what happens when you want it to stop?
+          </p>
+          <p className="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">
             The first shared economy platform for AI Agents.
             <br />
-            Like Uber for transportation, AIoOS for AI capabilities.
+            <span className="text-gray-500">Like Uber for transportation, AIoOS for AI capabilities.</span>
           </p>
 
           {/* Action Buttons */}
@@ -137,7 +150,7 @@ export default function HomePage() {
 
           {/* Inventor Credit */}
           <p className="mt-6 text-sm text-gray-500">
-            Invented by Ken Liao | FoodyePay Technology, Inc.
+            Invented by Ken Li | Ken Liao | FoodyePay Technology, Inc.
           </p>
         </div>
       </section>
@@ -147,7 +160,7 @@ export default function HomePage() {
         <div className="max-w-5xl mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
             <div className="p-4">
-              <div className="text-3xl font-bold text-purple-400">3</div>
+              <div className="text-3xl font-bold text-purple-400">24</div>
               <div className="text-sm text-gray-400">Patents Filed</div>
             </div>
             <div className="p-4">
@@ -596,11 +609,12 @@ export default function HomePage() {
               <Image src="/logo.png" alt="AIoOS Logo" width={32} height={32} />
               <div>
                 <span className="text-sm font-medium text-black">AIoOS - AI Onchain Operating System</span>
-                <p className="text-xs text-gray-500">3 Provisional Patents | USPTO Filing Date: 2026-01-30</p>
+                <p className="text-xs text-gray-500">24 USPTO Patent Applications | Filed 2026-01-30</p>
               </div>
             </div>
-            <div className="text-sm text-gray-600">
-              Gemini API Developer Competition 2025
+            <div className="text-sm text-gray-600 text-right">
+              <div>Gemini API Developer Competition 2025</div>
+              <div className="text-xs text-gray-400">Solana AI Hackathon | Uniswap Hookathon 2026</div>
             </div>
           </div>
         </div>
