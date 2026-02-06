@@ -386,6 +386,7 @@ export default function TaskExecutor({ agent, onClose, onAgentRevoked }: TaskExe
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-xl font-semibold text-black">Execute Task</h2>
+              <p className="text-xs text-gray-400 italic mt-0.5 tracking-wide">Autonomous ≠ Unconstrained — AIoOS License System</p>
               <div className="flex items-center gap-2 mt-1">
                 <span className="text-sm text-gray-700">Agent: <span className="font-medium text-black">{agent.name}</span></span>
                 <span className="text-xs text-gray-500 font-mono">did:aioos:{agent.id.slice(0, 8)}</span>

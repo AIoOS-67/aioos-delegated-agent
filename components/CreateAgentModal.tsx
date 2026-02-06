@@ -390,6 +390,7 @@ export default function CreateAgentModal({ onClose, onCreated }: CreateAgentModa
               insurance_policy_id: "POL-DEMO-XXX",
               valid_until: expiresIn === 'never' ? 'Never' : `+${expiresIn}`
             }, null, 2)}</pre>
+            <div className="mt-3 pt-3 border-t border-gray-700 text-gray-500 italic text-center tracking-wide">Autonomous ≠ Unconstrained — AIoOS License System</div>
           </div>
 
           {/* Actions */}
