@@ -46,3 +46,11 @@ __tests__/
 # Documentation
 *.md
 !README.md
+
+# Solana/Anchor build artifacts
+target/
+test-ledger/
+Cargo.lock
+programs/
+Anchor.toml
+Cargo.toml
