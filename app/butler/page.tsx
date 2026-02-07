@@ -31,7 +31,7 @@ interface Message {
   content: string;
   timestamp: Date;
   metadata?: {
-    type?: 'discovery' | 'license_check' | 'activation' | 'execution' | 'result' | 'escalation';
+    type?: 'discovery' | 'license_check' | 'activation' | 'execution' | 'result' | 'escalation' | 'dispatch' | 'revoke' | 'audit';
     agentId?: string;
     agentName?: string;
     details?: any;
@@ -42,6 +42,30 @@ interface DiscoveryResult {
   agent: AgentInPool;
   fitness_score: number;
   match_reasons: string[];
+}
+
+interface DispatchInfo {
+  agent: AgentInPool;
+  taskDescription: string;
+  estimatedTokens: number;
+  intent: { vertical: string; keywords: string[] };
+}
+
+interface ExecutionStep {
+  id: string;
+  name: string;
+  status: 'pending' | 'running' | 'completed' | 'failed';
+  output?: string;
+}
+
+interface AuditRecord {
+  timestamp: Date;
+  action: string;
+  agentId: string;
+  agentName: string;
+  status: 'success' | 'failed' | 'revoked';
+  tokensUsed: number;
+  duration: number;
 }
 
 const stateColors: Record<string, { bg: string; text: string; icon: string }> = {
@@ -75,6 +99,18 @@ export default function ButlerPage() {
   const [discoveryResults, setDiscoveryResults] = useState<DiscoveryResult[] | null>(null);
   const [selectedAgent, setSelectedAgent] = useState<AgentInPool | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Dispatch-related state
+  const [showDispatchConfirm, setShowDispatchConfirm] = useState(false);
+  const [dispatchInfo, setDispatchInfo] = useState<DispatchInfo | null>(null);
+  const [isExecuting, setIsExecuting] = useState(false);
+  const [executionSteps, setExecutionSteps] = useState<ExecutionStep[]>([]);
+  const [currentExecutionStep, setCurrentExecutionStep] = useState<number>(-1);
+  const [auditLog, setAuditLog] = useState<AuditRecord[]>([]);
+  const [canRevoke, setCanRevoke] = useState(false);
+  const [isRevoked, setIsRevoked] = useState(false);
+  const revokeRef = useRef(false);
+  const [userMessage, setUserMessage] = useState('');
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -126,24 +162,43 @@ export default function ButlerPage() {
     return { vertical: 'General', keywords: [] };
   };
 
+  // Estimate token usage based on task complexity
+  const estimateTokens = (vertical: string): number => {
+    const baseTokens: Record<string, number> = {
+      'Real Estate': 2500,
+      'Legal': 3200,
+      'Financial': 2800,
+      'Technical': 1800,
+      'Healthcare': 2200,
+      'General': 1500,
+    };
+    return baseTokens[vertical] || 1500;
+  };
+
+  // Handle initial submit - stops at license check
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isProcessing) return;
 
-    const userMessage = input.trim();
+    const userMsg = input.trim();
     setInput('');
     setIsProcessing(true);
     setDiscoveryResults(null);
     setSelectedAgent(null);
+    setShowDispatchConfirm(false);
+    setDispatchInfo(null);
+    setIsRevoked(false);
+    revokeRef.current = false;
+    setUserMessage(userMsg);
 
     // Add user message
-    addMessage({ role: 'user', content: userMessage });
+    addMessage({ role: 'user', content: userMsg });
 
     await sleep(500);
 
     // Step 1: Intent Interpretation
     setCurrentStep('intent');
-    const intent = detectIntent(userMessage);
+    const intent = detectIntent(userMsg);
     addMessage({
       role: 'system',
       content: `🎯 **Intent Analysis**\nDetected vertical: **${intent.vertical}**\nKeywords: ${intent.keywords.join(', ')}`,
@@ -213,93 +268,350 @@ export default function ButlerPage() {
       metadata: { type: 'license_check', agentId: bestMatch.agent.id }
     });
 
-    await sleep(1000);
+    await sleep(500);
+
+    // Step 4: Show Dispatch Button (NEW - Stop here and wait for user to dispatch)
+    setCurrentStep('dispatch_ready');
+    setDispatchInfo({
+      agent: bestMatch.agent,
+      taskDescription: userMsg,
+      estimatedTokens: estimateTokens(intent.vertical),
+      intent,
+    });
+    setShowDispatchConfirm(true);
+    setIsProcessing(false);
+
+    addMessage({
+      role: 'system',
+      content: `✅ **License Check Passed**\n\nAgent **${bestMatch.agent.name}** is ready to be dispatched.\nClick the green **Dispatch Agent** button to proceed.`,
+      metadata: { type: 'dispatch', agentId: bestMatch.agent.id }
+    });
+  };
+
+  // Handle Dispatch Confirmation
+  const handleDispatchConfirm = async () => {
+    if (!dispatchInfo || !selectedAgent) return;
+
+    const startTime = Date.now();
+    setShowDispatchConfirm(false);
+    setIsProcessing(true);
+    setIsExecuting(true);
+    setCanRevoke(true);
+    revokeRef.current = false;
+
+    const { agent, intent } = dispatchInfo;
+
+    addMessage({
+      role: 'system',
+      content: `🚀 **Dispatch Confirmed**\nInitiating task execution with **${agent.name}**...`,
+      metadata: { type: 'dispatch', agentId: agent.id }
+    });
+
+    await sleep(500);
 
     // Step 4: Agent Activation (PTAS lifecycle)
     setCurrentStep('activation');
-    const wasState = bestMatch.agent.state;
+    const wasState = agent.state;
 
     if (wasState === 'DORMANT' || wasState === 'HIBERNATING') {
       addMessage({
         role: 'system',
-        content: `⚡ **Agent Activation (PTAS)**\n${bestMatch.agent.name}: **${wasState}** → **ACTIVATING**`,
-        metadata: { type: 'activation', agentId: bestMatch.agent.id }
+        content: `⚡ **Agent Activation (PTAS)**\n${agent.name}: **${wasState}** → **ACTIVATING**`,
+        metadata: { type: 'activation', agentId: agent.id }
       });
 
-      updateAgentState(bestMatch.agent.id, 'ACTIVATING');
+      updateAgentState(agent.id, 'ACTIVATING');
       await sleep(600);
+
+      if (revokeRef.current) {
+        await handleRevoked(agent, startTime);
+        return;
+      }
 
       addMessage({
         role: 'system',
-        content: `🟢 ${bestMatch.agent.name}: **ACTIVATING** → **ACTIVE** (180ms)`,
-        metadata: { type: 'activation', agentId: bestMatch.agent.id }
+        content: `🟢 ${agent.name}: **ACTIVATING** → **ACTIVE** (180ms)`,
+        metadata: { type: 'activation', agentId: agent.id }
       });
 
-      updateAgentState(bestMatch.agent.id, 'ACTIVE', 50);
+      updateAgentState(agent.id, 'ACTIVE', 50);
     }
 
     await sleep(500);
 
-    // Step 5: Task Execution
+    if (revokeRef.current) {
+      await handleRevoked(agent, startTime);
+      return;
+    }
+
+    // Step 5: Multi-step Task Execution
     setCurrentStep('execution');
+    updateAgentState(agent.id, 'EXECUTING', 70);
+
+    // Define execution steps based on vertical
+    const steps = getExecutionSteps(intent.vertical);
+    setExecutionSteps(steps);
+
     addMessage({
       role: 'system',
-      content: `🔄 **Executing Task**\n${bestMatch.agent.name}: **ACTIVE** → **EXECUTING**\nProcessing your request...`,
-      metadata: { type: 'execution', agentId: bestMatch.agent.id }
+      content: `🔄 **Executing Task**\n${agent.name}: **ACTIVE** → **EXECUTING**\n\n**Task Pipeline** (${steps.length} steps):`,
+      metadata: { type: 'execution', agentId: agent.id }
     });
 
-    updateAgentState(bestMatch.agent.id, 'EXECUTING', 95);
+    // Execute each step with progress
+    for (let i = 0; i < steps.length; i++) {
+      if (revokeRef.current) {
+        await handleRevoked(agent, startTime);
+        return;
+      }
 
-    await sleep(2000);
+      setCurrentExecutionStep(i);
+      setExecutionSteps(prev => prev.map((s, idx) =>
+        idx === i ? { ...s, status: 'running' } : s
+      ));
+
+      const utilization = 70 + Math.floor((i / steps.length) * 25);
+      updateAgentState(agent.id, 'EXECUTING', utilization);
+
+      addMessage({
+        role: 'system',
+        content: `▶️ **Step ${i + 1}/${steps.length}**: ${steps[i].name}\n   Status: Running...`,
+        metadata: { type: 'execution', agentId: agent.id }
+      });
+
+      await sleep(800 + Math.random() * 400);
+
+      if (revokeRef.current) {
+        await handleRevoked(agent, startTime);
+        return;
+      }
+
+      const stepOutput = generateStepOutput(steps[i].name, intent.vertical);
+      setExecutionSteps(prev => prev.map((s, idx) =>
+        idx === i ? { ...s, status: 'completed', output: stepOutput } : s
+      ));
+
+      addMessage({
+        role: 'system',
+        content: `✅ **Step ${i + 1}**: Completed\n   Output: ${stepOutput}`,
+        metadata: { type: 'execution', agentId: agent.id }
+      });
+    }
+
+    setCanRevoke(false);
 
     // Step 6: Check if human approval needed
-    if (bestMatch.agent.permission_level === 'execute_with_human') {
+    if (agent.permission_level === 'execute_with_human') {
       setCurrentStep('escalation');
       addMessage({
         role: 'system',
         content: `⚠️ **Human Approval Required**\nPermission level: **execute_with_human**\nThis result requires human professional review before final delivery.`,
-        metadata: { type: 'escalation', agentId: bestMatch.agent.id }
+        metadata: { type: 'escalation', agentId: agent.id }
       });
       await sleep(1000);
     }
 
     // Step 7: Return result
     setCurrentStep('result');
+    updateAgentState(agent.id, 'EXECUTING', 100);
 
     // Generate contextual response based on vertical
-    let response = '';
-    if (intent.vertical === 'Real Estate') {
-      response = `**Lease Analysis Complete**\n\nI've analyzed the lease document and identified the following key points:\n\n1. **Rent Terms**: Standard NYC market rate structure\n2. **Security Deposit**: 1 month (compliant with NY Housing Stability Act)\n3. ⚠️ **Risk Flag**: Unusual early termination penalty clause (Section 12.3)\n4. **Recommendation**: Negotiate the penalty clause before signing\n\n*This analysis was performed by ${bestMatch.agent.name} under ${bestMatch.agent.permission_level} authorization. ${bestMatch.agent.permission_level === 'execute_with_human' ? 'A licensed broker has reviewed and approved this analysis.' : ''}*`;
-    } else if (intent.vertical === 'Legal') {
-      response = `**Contract Analysis Complete**\n\nI've reviewed the NDA and extracted key risks:\n\n1. **Non-Compete Duration**: 2 years (aggressive)\n2. **Geographic Scope**: Nationwide (broad)\n3. ⚠️ **Risk Flag**: Unilateral modification clause in Section 8\n4. **Recommendation**: Request mutual modification rights\n\n⚖️ *ANALYSIS ONLY - NOT LEGAL ADVICE*\n*Performed by ${bestMatch.agent.name}. Please consult with your attorney.*`;
-    } else if (intent.vertical === 'Financial') {
-      response = `**Portfolio Analysis Complete**\n\nBased on your 401k allocation:\n\n1. **Current Risk Level**: High concentration in tech sector (45%)\n2. **Recommendation**: Consider diversifying into bonds/international\n3. **Target Allocation**: 60% stocks, 30% bonds, 10% alternatives\n\n💰 *Advisory Only - This is not investment advice*\n*Performed by ${bestMatch.agent.name}. Execute trades through your own broker.*`;
-    } else if (intent.vertical === 'Technical') {
-      response = `**Code Solution**\n\n\`\`\`python\ndef sort_list(items, reverse=False):\n    """Sort a list using Python's built-in Timsort.\n    \n    Args:\n        items: List to sort\n        reverse: Sort in descending order if True\n    \n    Returns:\n        New sorted list\n    """\n    return sorted(items, reverse=reverse)\n\n# Example usage\nnumbers = [3, 1, 4, 1, 5, 9, 2, 6]\nprint(sort_list(numbers))  # [1, 1, 2, 3, 4, 5, 6, 9]\n\`\`\`\n\n*Generated by ${bestMatch.agent.name}*`;
-    } else {
-      response = `I've processed your request through ${bestMatch.agent.name}. The analysis is complete.`;
-    }
+    const response = generateResponse(intent.vertical, agent);
 
     addMessage({
       role: 'butler',
       content: response,
-      metadata: { type: 'result', agentId: bestMatch.agent.id, agentName: bestMatch.agent.name }
+      metadata: { type: 'result', agentId: agent.id, agentName: agent.name }
     });
 
     // Return agent to DORMANT
     await sleep(500);
-    updateAgentState(bestMatch.agent.id, 'ACTIVE', 30);
+    updateAgentState(agent.id, 'ACTIVE', 30);
     await sleep(1000);
-    updateAgentState(bestMatch.agent.id, 'DORMANT', 0);
+    updateAgentState(agent.id, 'DORMANT', 0);
 
     addMessage({
       role: 'system',
-      content: `💤 ${bestMatch.agent.name}: **ACTIVE** → **DORMANT**\nAgent returned to low-power state.`,
-      metadata: { type: 'activation', agentId: bestMatch.agent.id }
+      content: `💤 ${agent.name}: **ACTIVE** → **DORMANT**\nAgent returned to low-power state.`,
+      metadata: { type: 'activation', agentId: agent.id }
+    });
+
+    // Add audit record
+    const endTime = Date.now();
+    const newAuditRecord: AuditRecord = {
+      timestamp: new Date(),
+      action: `Task: ${userMessage}`,
+      agentId: agent.id,
+      agentName: agent.name,
+      status: 'success',
+      tokensUsed: dispatchInfo.estimatedTokens + Math.floor(Math.random() * 200),
+      duration: endTime - startTime,
+    };
+    setAuditLog(prev => [newAuditRecord, ...prev]);
+
+    addMessage({
+      role: 'system',
+      content: `📋 **Audit Record**\n✓ Agent: ${agent.name} (${agent.id})\n✓ Status: SUCCESS\n✓ Duration: ${((endTime - startTime) / 1000).toFixed(2)}s\n✓ Tokens Used: ${newAuditRecord.tokensUsed}\n✓ Timestamp: ${newAuditRecord.timestamp.toISOString()}`,
+      metadata: { type: 'audit', agentId: agent.id }
     });
 
     setIsProcessing(false);
+    setIsExecuting(false);
     setCurrentStep(null);
+    setExecutionSteps([]);
+    setCurrentExecutionStep(-1);
+  };
+
+  // Handle Revoke
+  const handleRevoke = () => {
+    revokeRef.current = true;
+    setIsRevoked(true);
+  };
+
+  const handleRevoked = async (agent: AgentInPool, startTime: number) => {
+    setCanRevoke(false);
+
+    addMessage({
+      role: 'system',
+      content: `🛑 **TASK REVOKED**\nAgent **${agent.name}** execution has been interrupted.\nAll pending operations cancelled.`,
+      metadata: { type: 'revoke', agentId: agent.id }
+    });
+
+    // Return agent to DORMANT immediately
+    updateAgentState(agent.id, 'DORMANT', 0);
+
+    // Add audit record for revoked task
+    const endTime = Date.now();
+    const newAuditRecord: AuditRecord = {
+      timestamp: new Date(),
+      action: `Task: ${userMessage} (REVOKED)`,
+      agentId: agent.id,
+      agentName: agent.name,
+      status: 'revoked',
+      tokensUsed: Math.floor(dispatchInfo?.estimatedTokens || 0 * 0.3), // Partial usage
+      duration: endTime - startTime,
+    };
+    setAuditLog(prev => [newAuditRecord, ...prev]);
+
+    addMessage({
+      role: 'system',
+      content: `📋 **Audit Record**\n⚠️ Agent: ${agent.name} (${agent.id})\n⚠️ Status: REVOKED\n⚠️ Duration: ${((endTime - startTime) / 1000).toFixed(2)}s\n⚠️ Tokens Used: ${newAuditRecord.tokensUsed} (partial)\n⚠️ Timestamp: ${newAuditRecord.timestamp.toISOString()}`,
+      metadata: { type: 'audit', agentId: agent.id }
+    });
+
+    setIsProcessing(false);
+    setIsExecuting(false);
+    setCurrentStep(null);
+    setShowDispatchConfirm(false);
+    setDispatchInfo(null);
+    setExecutionSteps([]);
+    setCurrentExecutionStep(-1);
+  };
+
+  // Handle Cancel Dispatch
+  const handleDispatchCancel = () => {
+    setShowDispatchConfirm(false);
+    setDispatchInfo(null);
+    setCurrentStep(null);
+
+    addMessage({
+      role: 'system',
+      content: `❌ **Dispatch Cancelled**\nTask execution was cancelled by user.`,
+      metadata: { type: 'dispatch' }
+    });
+  };
+
+  // Get execution steps based on vertical
+  const getExecutionSteps = (vertical: string): ExecutionStep[] => {
+    const stepSets: Record<string, string[]> = {
+      'Real Estate': [
+        'Parsing document structure',
+        'Extracting key terms and clauses',
+        'Analyzing compliance with NY Housing Law',
+        'Identifying risk factors',
+        'Generating recommendations'
+      ],
+      'Legal': [
+        'Document classification',
+        'Clause extraction and analysis',
+        'Risk assessment scoring',
+        'Compliance verification',
+        'Report generation'
+      ],
+      'Financial': [
+        'Portfolio data analysis',
+        'Risk metric calculation',
+        'Market comparison',
+        'Diversification analysis',
+        'Recommendation synthesis'
+      ],
+      'Technical': [
+        'Requirements analysis',
+        'Algorithm selection',
+        'Code generation',
+        'Validation checks'
+      ],
+      'Healthcare': [
+        'Symptom classification',
+        'Knowledge base lookup',
+        'Risk assessment',
+        'Recommendation generation'
+      ],
+    };
+
+    const names = stepSets[vertical] || ['Processing', 'Analyzing', 'Generating'];
+    return names.map((name, idx) => ({
+      id: `step-${idx}`,
+      name,
+      status: 'pending' as const,
+    }));
+  };
+
+  // Generate step output
+  const generateStepOutput = (stepName: string, vertical: string): string => {
+    const outputs: Record<string, Record<string, string>> = {
+      'Real Estate': {
+        'Parsing document structure': '42 sections identified, 128 clauses extracted',
+        'Extracting key terms and clauses': 'Found 15 key terms, 8 financial obligations',
+        'Analyzing compliance with NY Housing Law': '3 potential compliance issues detected',
+        'Identifying risk factors': 'Risk score: 6.2/10 (Moderate)',
+        'Generating recommendations': '4 recommendations generated',
+      },
+      'Legal': {
+        'Document classification': 'Type: NDA | Subtype: Mutual | Complexity: High',
+        'Clause extraction and analysis': '24 clauses analyzed, 3 flagged for review',
+        'Risk assessment scoring': 'Overall risk: 7.1/10',
+        'Compliance verification': 'Jurisdiction check passed',
+        'Report generation': 'Report compiled (2,400 words)',
+      },
+      'Financial': {
+        'Portfolio data analysis': 'Assets: $245K | Holdings: 18 positions',
+        'Risk metric calculation': 'Sharpe Ratio: 0.82 | Beta: 1.15',
+        'Market comparison': 'Outperforming S&P 500 by 2.3%',
+        'Diversification analysis': 'Sector concentration: Tech 45%',
+        'Recommendation synthesis': '3 rebalancing suggestions generated',
+      },
+      'Technical': {
+        'Requirements analysis': 'Input: List | Output: Sorted List | Complexity: O(n log n)',
+        'Algorithm selection': 'Selected: Timsort (hybrid merge/insertion)',
+        'Code generation': 'Generated 15 lines of Python',
+        'Validation checks': 'All edge cases handled',
+      },
+    };
+
+    return outputs[vertical]?.[stepName] || 'Completed successfully';
+  };
+
+  // Generate response based on vertical
+  const generateResponse = (vertical: string, agent: AgentInPool): string => {
+    const responses: Record<string, string> = {
+      'Real Estate': `**Lease Analysis Complete**\n\nI've analyzed the lease document and identified the following key points:\n\n1. **Rent Terms**: Standard NYC market rate structure\n2. **Security Deposit**: 1 month (compliant with NY Housing Stability Act)\n3. ⚠️ **Risk Flag**: Unusual early termination penalty clause (Section 12.3)\n4. **Recommendation**: Negotiate the penalty clause before signing\n\n*This analysis was performed by ${agent.name} under ${agent.permission_level} authorization. ${agent.permission_level === 'execute_with_human' ? 'A licensed broker has reviewed and approved this analysis.' : ''}*`,
+      'Legal': `**Contract Analysis Complete**\n\nI've reviewed the NDA and extracted key risks:\n\n1. **Non-Compete Duration**: 2 years (aggressive)\n2. **Geographic Scope**: Nationwide (broad)\n3. ⚠️ **Risk Flag**: Unilateral modification clause in Section 8\n4. **Recommendation**: Request mutual modification rights\n\n⚖️ *ANALYSIS ONLY - NOT LEGAL ADVICE*\n*Performed by ${agent.name}. Please consult with your attorney.*`,
+      'Financial': `**Portfolio Analysis Complete**\n\nBased on your 401k allocation:\n\n1. **Current Risk Level**: High concentration in tech sector (45%)\n2. **Recommendation**: Consider diversifying into bonds/international\n3. **Target Allocation**: 60% stocks, 30% bonds, 10% alternatives\n\n💰 *Advisory Only - This is not investment advice*\n*Performed by ${agent.name}. Execute trades through your own broker.*`,
+      'Technical': `**Code Solution**\n\n\`\`\`python\ndef sort_list(items, reverse=False):\n    """Sort a list using Python's built-in Timsort.\n    \n    Args:\n        items: List to sort\n        reverse: Sort in descending order if True\n    \n    Returns:\n        New sorted list\n    """\n    return sorted(items, reverse=reverse)\n\n# Example usage\nnumbers = [3, 1, 4, 1, 5, 9, 2, 6]\nprint(sort_list(numbers))  # [1, 1, 2, 3, 4, 5, 6, 9]\n\`\`\`\n\n*Generated by ${agent.name}*`,
+    };
+
+    return responses[vertical] || `I've processed your request through ${agent.name}. The analysis is complete.`;
   };
 
   const handleExampleClick = (prompt: string) => {
@@ -345,6 +657,12 @@ export default function ButlerPage() {
                     ? 'bg-blue-600 text-white'
                     : msg.role === 'butler'
                     ? 'bg-gray-700 text-white'
+                    : msg.metadata?.type === 'dispatch'
+                    ? 'bg-green-900/30 text-green-300 border border-green-700 text-sm font-mono'
+                    : msg.metadata?.type === 'revoke'
+                    ? 'bg-red-900/30 text-red-300 border border-red-700 text-sm font-mono'
+                    : msg.metadata?.type === 'audit'
+                    ? 'bg-purple-900/30 text-purple-300 border border-purple-700 text-sm font-mono'
                     : 'bg-gray-800 text-gray-300 border border-gray-600 text-sm font-mono'
                 }`}>
                   {msg.role === 'butler' && (
@@ -355,7 +673,7 @@ export default function ButlerPage() {
                   )}
                   {msg.role === 'system' && msg.metadata?.type && (
                     <div className="flex items-center gap-2 mb-2 text-xs text-purple-400">
-                      <span>⚙️</span>
+                      <span>{msg.metadata.type === 'dispatch' ? '🚀' : msg.metadata.type === 'revoke' ? '🛑' : msg.metadata.type === 'audit' ? '📋' : '⚙️'}</span>
                       <span className="uppercase">{msg.metadata.type.replace('_', ' ')}</span>
                     </div>
                   )}
@@ -368,6 +686,155 @@ export default function ButlerPage() {
                 </div>
               </div>
             ))}
+
+            {/* Dispatch Confirmation Panel */}
+            {showDispatchConfirm && dispatchInfo && (
+              <div className="flex justify-start">
+                <div className="max-w-2xl w-full bg-gradient-to-br from-green-900/40 to-green-800/20 border-2 border-green-500 rounded-xl p-4">
+                  <div className="flex items-center gap-2 mb-4">
+                    <span className="text-2xl">🚀</span>
+                    <h3 className="text-lg font-bold text-green-400">Dispatch Agent Confirmation</h3>
+                  </div>
+
+                  <div className="space-y-3 mb-4">
+                    <div className="flex justify-between py-2 border-b border-green-700/50">
+                      <span className="text-gray-400">Agent Name:</span>
+                      <span className="text-white font-medium">{dispatchInfo.agent.name}</span>
+                    </div>
+                    <div className="flex justify-between py-2 border-b border-green-700/50">
+                      <span className="text-gray-400">Agent ID:</span>
+                      <span className="text-green-400 font-mono text-sm">{dispatchInfo.agent.id}</span>
+                    </div>
+                    <div className="flex justify-between py-2 border-b border-green-700/50">
+                      <span className="text-gray-400">Task Description:</span>
+                      <span className="text-white text-sm max-w-xs truncate">{dispatchInfo.taskDescription}</span>
+                    </div>
+                    <div className="flex justify-between py-2 border-b border-green-700/50">
+                      <span className="text-gray-400">Permission Level:</span>
+                      <span className={`font-medium ${
+                        dispatchInfo.agent.permission_level === 'advisory_only' ? 'text-green-400' :
+                        dispatchInfo.agent.permission_level === 'execute_with_human' ? 'text-yellow-400' :
+                        'text-red-400'
+                      }`}>{dispatchInfo.agent.permission_level}</span>
+                    </div>
+                    <div className="flex justify-between py-2 border-b border-green-700/50">
+                      <span className="text-gray-400">Trust Tier:</span>
+                      <span className="text-white">{dispatchInfo.agent.trust_tier}</span>
+                    </div>
+                    <div className="flex justify-between py-2">
+                      <span className="text-gray-400">Est. Token Consumption:</span>
+                      <span className="text-cyan-400 font-mono">~{dispatchInfo.estimatedTokens.toLocaleString()} tokens</span>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button
+                      onClick={handleDispatchCancel}
+                      className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleDispatchConfirm}
+                      className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                    >
+                      <span>✓</span>
+                      <span>Confirm Dispatch</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Dispatch Button (shown after license check passes) */}
+            {currentStep === 'dispatch_ready' && !showDispatchConfirm && dispatchInfo && (
+              <div className="flex justify-center">
+                <button
+                  onClick={() => setShowDispatchConfirm(true)}
+                  className="px-6 py-3 bg-green-600 hover:bg-green-500 text-white rounded-xl font-bold text-lg transition-all transform hover:scale-105 flex items-center gap-3 shadow-lg shadow-green-500/30"
+                >
+                  <span className="text-xl">✓</span>
+                  <span>Dispatch Agent</span>
+                </button>
+              </div>
+            )}
+
+            {/* Execution Progress Panel */}
+            {isExecuting && executionSteps.length > 0 && (
+              <div className="flex justify-start">
+                <div className="max-w-2xl w-full bg-gradient-to-br from-blue-900/40 to-blue-800/20 border border-blue-500 rounded-xl p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl animate-pulse">🔄</span>
+                      <h3 className="text-lg font-bold text-blue-400">Execution Progress</h3>
+                    </div>
+                    {canRevoke && (
+                      <button
+                        onClick={handleRevoke}
+                        className="px-4 py-1.5 bg-red-600 hover:bg-red-500 text-white rounded-lg font-medium text-sm transition-colors flex items-center gap-2"
+                      >
+                        <span>🛑</span>
+                        <span>Revoke</span>
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    {executionSteps.map((step, idx) => (
+                      <div
+                        key={step.id}
+                        className={`flex items-center gap-3 p-2 rounded-lg ${
+                          step.status === 'running' ? 'bg-blue-800/30' :
+                          step.status === 'completed' ? 'bg-green-800/20' :
+                          'bg-gray-800/30'
+                        }`}
+                      >
+                        <div className="w-6 h-6 flex items-center justify-center">
+                          {step.status === 'pending' && <span className="text-gray-500">○</span>}
+                          {step.status === 'running' && (
+                            <svg className="animate-spin h-5 w-5 text-blue-400" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                            </svg>
+                          )}
+                          {step.status === 'completed' && <span className="text-green-400">✓</span>}
+                          {step.status === 'failed' && <span className="text-red-400">✗</span>}
+                        </div>
+                        <div className="flex-1">
+                          <div className={`text-sm ${
+                            step.status === 'running' ? 'text-blue-300 font-medium' :
+                            step.status === 'completed' ? 'text-green-300' :
+                            'text-gray-400'
+                          }`}>
+                            Step {idx + 1}: {step.name}
+                          </div>
+                          {step.output && (
+                            <div className="text-xs text-gray-500 mt-0.5">{step.output}</div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Progress Bar */}
+                  <div className="mt-4">
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className="text-gray-400">Progress</span>
+                      <span className="text-blue-400">
+                        {executionSteps.filter(s => s.status === 'completed').length}/{executionSteps.length} steps
+                      </span>
+                    </div>
+                    <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-blue-500 to-green-500 transition-all duration-500"
+                        style={{ width: `${(executionSteps.filter(s => s.status === 'completed').length / executionSteps.length) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div ref={messagesEndRef} />
           </div>
 
@@ -444,11 +911,43 @@ export default function ButlerPage() {
 
             {/* Current Processing Step */}
             {currentStep && (
-              <div className="mb-4 p-3 bg-blue-900/30 border border-blue-700 rounded-lg">
-                <div className="text-xs text-blue-400 mb-1">Current Step:</div>
-                <div className="text-sm font-medium text-blue-300 capitalize">
-                  {currentStep.replace('_', ' ')}
+              <div className={`mb-4 p-3 border rounded-lg ${
+                currentStep === 'dispatch_ready'
+                  ? 'bg-green-900/30 border-green-700'
+                  : isExecuting
+                  ? 'bg-blue-900/30 border-blue-700'
+                  : 'bg-blue-900/30 border-blue-700'
+              }`}>
+                <div className={`text-xs mb-1 ${
+                  currentStep === 'dispatch_ready' ? 'text-green-400' : 'text-blue-400'
+                }`}>Current Step:</div>
+                <div className={`text-sm font-medium capitalize ${
+                  currentStep === 'dispatch_ready' ? 'text-green-300' : 'text-blue-300'
+                }`}>
+                  {currentStep === 'dispatch_ready' ? 'Ready to Dispatch' : currentStep.replace('_', ' ')}
                 </div>
+                {isExecuting && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <svg className="animate-spin h-4 w-4 text-blue-400" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    <span className="text-xs text-blue-300">Processing...</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Revoke Button in Sidebar */}
+            {canRevoke && !isRevoked && (
+              <div className="mb-4">
+                <button
+                  onClick={handleRevoke}
+                  className="w-full px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                >
+                  <span>🛑</span>
+                  <span>Revoke Execution</span>
+                </button>
               </div>
             )}
 
@@ -551,6 +1050,88 @@ export default function ButlerPage() {
                 </div>
               </div>
             </div>
+
+            {/* Audit Log */}
+            {auditLog.length > 0 && (
+              <div className="mt-4 p-3 bg-gray-900 rounded-lg">
+                <div className="text-xs text-gray-400 mb-2 flex items-center gap-2">
+                  <span>📋</span>
+                  <span>Audit Log</span>
+                  <span className="ml-auto text-gray-500">({auditLog.length})</span>
+                </div>
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {auditLog.slice(0, 5).map((record, idx) => (
+                    <div
+                      key={idx}
+                      className={`p-2 rounded text-xs border ${
+                        record.status === 'success'
+                          ? 'bg-green-900/20 border-green-800'
+                          : record.status === 'revoked'
+                          ? 'bg-yellow-900/20 border-yellow-800'
+                          : 'bg-red-900/20 border-red-800'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-medium text-gray-300">{record.agentName}</span>
+                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-mono ${
+                          record.status === 'success'
+                            ? 'bg-green-800 text-green-300'
+                            : record.status === 'revoked'
+                            ? 'bg-yellow-800 text-yellow-300'
+                            : 'bg-red-800 text-red-300'
+                        }`}>
+                          {record.status.toUpperCase()}
+                        </span>
+                      </div>
+                      <div className="text-gray-500 truncate">{record.action}</div>
+                      <div className="flex justify-between text-gray-600 mt-1">
+                        <span>{record.tokensUsed} tokens</span>
+                        <span>{(record.duration / 1000).toFixed(1)}s</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Execution Steps Mini View */}
+            {isExecuting && executionSteps.length > 0 && (
+              <div className="mt-4 p-3 bg-blue-900/20 border border-blue-800 rounded-lg">
+                <div className="text-xs text-blue-400 mb-2 flex items-center gap-2">
+                  <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  <span>Task Execution</span>
+                </div>
+                <div className="space-y-1">
+                  {executionSteps.map((step, idx) => (
+                    <div key={step.id} className="flex items-center gap-2 text-xs">
+                      <span className={`w-4 ${
+                        step.status === 'completed' ? 'text-green-400' :
+                        step.status === 'running' ? 'text-blue-400' :
+                        'text-gray-600'
+                      }`}>
+                        {step.status === 'completed' ? '✓' : step.status === 'running' ? '▶' : '○'}
+                      </span>
+                      <span className={
+                        step.status === 'completed' ? 'text-gray-400' :
+                        step.status === 'running' ? 'text-blue-300' :
+                        'text-gray-600'
+                      }>
+                        {idx + 1}. {step.name.slice(0, 20)}{step.name.length > 20 ? '...' : ''}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-2 h-1 bg-gray-700 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-blue-500 transition-all duration-300"
+                    style={{ width: `${(executionSteps.filter(s => s.status === 'completed').length / executionSteps.length) * 100}%` }}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

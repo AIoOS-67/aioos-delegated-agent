@@ -37,3 +37,12 @@ next-env.d.ts
 data/
 *.db
 *.sqlite
+
+# Solana/Anchor build artifacts
+target/
+test-ledger/
+Cargo.lock
+
+# Windows artifacts
+nul
+NUL

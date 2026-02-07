@@ -38,6 +38,11 @@ Desktop.ini
 cloudbuild.yaml
 .gcloudignore
 
+# Solana/Anchor program (built separately)
+programs/
+target/
+Anchor.toml
+
 # Docker files
 Dockerfile
 .dockerignore
